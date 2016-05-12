@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.google.android.exoplayer.ExoPlaybackException;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
+import com.google.android.exoplayer.MediaCodecSelector;
 import com.google.android.exoplayer.MediaCodecTrackRenderer;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioTrack;
@@ -33,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String USER_AGENT = "Android";
 
     private static final SparseArray<String> EXO_PLAYER_STATES = new SparseArray<String>(5);
+
+    public static final String HTTP_LIVE_ANTENNE_AT_AS = "http://live.antenne.at/as";
+    public static final String KLZ_AUDIO_TEST_FILE = "http://static.tailored-apps.com/klz/klzaudio_007.mp3";
 
     {
         EXO_PLAYER_STATES.put(ExoPlayer.STATE_BUFFERING, "STATE_BUFFERING");
@@ -69,6 +73,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onAudioTrackWriteError(AudioTrack.WriteException e) {
             Timber.e(e, "onAudioTrackWriteError");
+        }
+
+        @Override
+        public void onAudioTrackUnderrun(int bufferSize, long bufferSizeMs, long elapsedSinceLastFeedMs) {
+
         }
 
         @Override
@@ -116,10 +125,17 @@ public class MainActivity extends AppCompatActivity {
         // Build the video and audio renderers.
         DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter(mHandler, null);
         DataSource dataSource = new DefaultUriDataSource(this, bandwidthMeter, USER_AGENT);
-        ExtractorSampleSource sampleSource = new ExtractorSampleSource(Uri.parse("http://live.antenne.at/as"), dataSource, allocator,
+        ExtractorSampleSource sampleSource = new ExtractorSampleSource(Uri.parse(HTTP_LIVE_ANTENNE_AT_AS), dataSource, allocator,
                 BUFFER_SEGMENT_COUNT * BUFFER_SEGMENT_SIZE);
-        MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(sampleSource,
-                null, true, mHandler, mMediaCodecAudioTrackRendererEventListener);
+        MediaCodecAudioTrackRenderer audioRenderer = new MediaCodecAudioTrackRenderer(
+                sampleSource,
+                MediaCodecSelector.DEFAULT,
+                null,
+                true,
+                mHandler,
+                mMediaCodecAudioTrackRendererEventListener
+        );
+
         // Invoke the callback.
         TrackRenderer[] renderers = new TrackRenderer[1];
         renderers[0] = audioRenderer;
